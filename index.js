@@ -8,10 +8,7 @@ const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 
 async function sendTelegramMessage(text) {
-  if (!TELEGRAM_TOKEN || !CHAT_ID) {
-    console.log("Telegram not configured");
-    return;
-  }
+  if (!TELEGRAM_TOKEN || !CHAT_ID) return;
 
   await axios.post(
     `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
@@ -23,15 +20,10 @@ async function sendTelegramMessage(text) {
 }
 
 (async () => {
-  const browser = await chromium.launch({
-    headless: true,
-  });
-
+  const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
 
-  page.setDefaultTimeout(30000);
-
-  console.log("Opening Ticketmaster page...");
+  console.log("Loading page...");
 
   await page.goto(URL, {
     waitUntil: "domcontentloaded",
@@ -39,8 +31,6 @@ async function sendTelegramMessage(text) {
   });
 
   await page.waitForTimeout(5000);
-
-  console.log("Checking page...");
 
   const content = (await page.content()).toLowerCase();
 
@@ -53,14 +43,11 @@ async function sendTelegramMessage(text) {
 
   const unavailable = blockedWords.some((w) => content.includes(w));
 
-  if (unavailable) {
-    console.log("❌ No tickets");
+  if (!unavailable) {
+    console.log("🚨 POSSIBLE TICKETS");
+    await sendTelegramMessage("🚨 Ticket alert!\nCheck: " + URL);
   } else {
-    console.log("🚨 POSSIBLE TICKETS FOUND");
-
-    await sendTelegramMessage(
-      "🚨 Ticket Alert!\nPossible availability detected:\n" + URL
-    );
+    console.log("❌ No tickets");
   }
 
   await browser.close();
