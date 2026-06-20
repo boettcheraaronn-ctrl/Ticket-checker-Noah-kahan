@@ -4,14 +4,14 @@ const axios = require("axios");
 const URL =
   "https://www.ticketmaster.ca/noah-kahan-the-great-divide-tour-vancouver-british-columbia-08-28-2026/event/1100643DA3BF7B99";
 
-const 8938346563:AAHjG2Z5LQGiV59HoB7wf5Lb12h0tYbEL90 = process.env.8938346563:AAHjG2Z5LQGiV59HoB7wf5Lb12h0tYbEL90;
-const 8612489860 = process.env.;
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+const CHAT_ID = process.env.CHAT_ID;
 
 async function sendMessage(text) {
   await axios.post(
-    `https://api.telegram.org/bot${8938346563:AAHjG2Z5LQGiV59HoB7wf5Lb12h0tYbEL90}/sendMessage`,
+    `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
     {
-      chat_id: 8612489860,
+      chat_id: CHAT_ID,
       text,
     }
   );
