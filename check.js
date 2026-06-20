@@ -23,16 +23,11 @@ async function sendTelegramMessage(text) {
 }
 
 (async () => {
-  const browser = await chromium.launch({
-    headless: true,
-  });
-
+  const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
 
-  // Optional: helps prevent weird hangs on heavy sites like Ticketmaster
   page.setDefaultTimeout(30000);
 
-  // Debug logs (VERY helpful if it hangs)
   page.on("console", (msg) => console.log("BROWSER:", msg.text()));
   page.on("requestfailed", (req) =>
     console.log("FAILED REQUEST:", req.url())
@@ -40,7 +35,6 @@ async function sendTelegramMessage(text) {
 
   console.log("Opening page...");
 
-  // ✅ THIS is the important part you were asking about
   await page.goto(URL, {
     waitUntil: "domcontentloaded",
     timeout: 30000,
@@ -49,9 +43,6 @@ async function sendTelegramMessage(text) {
   await page.waitForTimeout(5000);
 
   console.log("Page loaded, checking availability...");
-
-  // ---- TICKET CHECK LOGIC ----
-  // This is a SAFE generic example since Ticketmaster changes selectors often
 
   const pageText = await page.content();
 
@@ -67,12 +58,12 @@ async function sendTelegramMessage(text) {
   );
 
   if (isSoldOut) {
-    console.log("❌ No tickets found");
+    console.log("❌ Sold out");
   } else {
-    console.log("🚨 POSSIBLE TICKETS AVAILABLE!");
+    console.log("🚨 Possible tickets!");
 
     await sendTelegramMessage(
-      "🚨 Ticket Alert: Something may be available!\nCheck: " + URL
+      "🚨 Ticket Alert: Possible availability!\n" + URL
     );
   }
 
