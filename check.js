@@ -25,7 +25,12 @@ async function sendMessage(text) {
 
   const content = await page.content();
   const text = await page.innerText("body");
+  
+console.log("----- PAGE TEXT -----");
+console.log(text.substring(0, 3000));
+console.log("---------------------");
 
+  await page.screenshot({ path: "ticketmaster.png", fullPage: true });
   const hasBuyButton = text.toLowerCase().includes("buy tickets");
   const isSoldOut =
     text.toLowerCase().includes("sold out") ||
