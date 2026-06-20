@@ -23,17 +23,15 @@ async function sendTelegramMessage(text) {
 }
 
 (async () => {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: true,
+  });
+
   const page = await browser.newPage();
 
   page.setDefaultTimeout(30000);
 
-  page.on("console", (msg) => console.log("BROWSER:", msg.text()));
-  page.on("requestfailed", (req) =>
-    console.log("FAILED REQUEST:", req.url())
-  );
-
-  console.log("Opening page...");
+  console.log("Opening Ticketmaster page...");
 
   await page.goto(URL, {
     waitUntil: "domcontentloaded",
@@ -42,28 +40,26 @@ async function sendTelegramMessage(text) {
 
   await page.waitForTimeout(5000);
 
-  console.log("Page loaded, checking availability...");
+  console.log("Checking page...");
 
-  const pageText = await page.content();
+  const content = (await page.content()).toLowerCase();
 
-  const unavailableKeywords = [
-    "not available",
+  const blockedWords = [
     "sold out",
+    "not available",
     "tickets are not available",
     "onsale has ended",
   ];
 
-  const isSoldOut = unavailableKeywords.some((word) =>
-    pageText.toLowerCase().includes(word)
-  );
+  const unavailable = blockedWords.some((w) => content.includes(w));
 
-  if (isSoldOut) {
-    console.log("❌ Sold out");
+  if (unavailable) {
+    console.log("❌ No tickets");
   } else {
-    console.log("🚨 Possible tickets!");
+    console.log("🚨 POSSIBLE TICKETS FOUND");
 
     await sendTelegramMessage(
-      "🚨 Ticket Alert: Possible availability!\n" + URL
+      "🚨 Ticket Alert!\nPossible availability detected:\n" + URL
     );
   }
 
