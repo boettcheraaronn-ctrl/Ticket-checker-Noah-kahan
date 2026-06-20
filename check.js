@@ -7,7 +7,12 @@ const URL =
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 
-async function sendMessage(text) {
+async function sendTelegramMessage(text) {
+  if (!TELEGRAM_TOKEN || !CHAT_ID) {
+    console.log("Telegram not configured");
+    return;
+  }
+
   await axios.post(
     `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
     {
@@ -18,32 +23,57 @@ async function sendMessage(text) {
 }
 
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({
+    headless: true,
+  });
+
   const page = await browser.newPage();
 
-  await page.goto(URL, { waitUntil: "networkidle" });
+  // Optional: helps prevent weird hangs on heavy sites like Ticketmaster
+  page.setDefaultTimeout(30000);
 
-  const content = await page.content();
-  const text = await page.innerText("body");
-  
-console.log("----- PAGE TEXT -----");
-console.log(text.substring(0, 3000));
-console.log("---------------------");
+  // Debug logs (VERY helpful if it hangs)
+  page.on("console", (msg) => console.log("BROWSER:", msg.text()));
+  page.on("requestfailed", (req) =>
+    console.log("FAILED REQUEST:", req.url())
+  );
 
-  await page.screenshot({ path: "ticketmaster.png", fullPage: true });
-  const hasBuyButton = text.toLowerCase().includes("buy tickets");
-  const isSoldOut =
-    text.toLowerCase().includes("sold out") ||
-    text.toLowerCase().includes("not available");
+  console.log("Opening page...");
 
-  console.log("Buy button:", hasBuyButton);
-  console.log("Sold out:", isSoldOut);
+  // ✅ THIS is the important part you were asking about
+  await page.goto(URL, {
+    waitUntil: "domcontentloaded",
+    timeout: 30000,
+  });
 
-  // REAL LOGIC
-  if (hasBuyButton && !isSoldOut) {
-    await sendMessage("🎟 TICKETS MAY BE AVAILABLE — CHECK NOW");
+  await page.waitForTimeout(5000);
+
+  console.log("Page loaded, checking availability...");
+
+  // ---- TICKET CHECK LOGIC ----
+  // This is a SAFE generic example since Ticketmaster changes selectors often
+
+  const pageText = await page.content();
+
+  const unavailableKeywords = [
+    "not available",
+    "sold out",
+    "tickets are not available",
+    "onsale has ended",
+  ];
+
+  const isSoldOut = unavailableKeywords.some((word) =>
+    pageText.toLowerCase().includes(word)
+  );
+
+  if (isSoldOut) {
+    console.log("❌ No tickets found");
   } else {
-    console.log("No availability detected");
+    console.log("🚨 POSSIBLE TICKETS AVAILABLE!");
+
+    await sendTelegramMessage(
+      "🚨 Ticket Alert: Something may be available!\nCheck: " + URL
+    );
   }
 
   await browser.close();
