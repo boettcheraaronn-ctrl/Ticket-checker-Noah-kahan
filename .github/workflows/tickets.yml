@@ -17,7 +17,7 @@ jobs:
           node-version: 20
 
       - name: Install dependencies (fast mode)
-        run: npm install --no-audit --no-fund
+        run: npm install
 
       - name: Install Playwright browsers (stable)
         run: npx playwright install --with-deps
